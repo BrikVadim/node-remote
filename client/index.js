@@ -1,5 +1,5 @@
 const {match, matchReciver} = require("./../lib/match");
-const {desktopCapturer} = require("electron");
+const {desktopCapturer, clipboard} = require("electron");
 const Robot = require("robotjs");
 const Peer = require("peerjs");
 const Guid = require("guid");
@@ -47,8 +47,11 @@ const handleMessage = recivedPackage => {
         .on(message.is("GET_SOURCES"),      getSources)
         .on(message.is("GET_STREAM_BY_ID"), getStreamById)
         .on(message.is("MOUSE_MOVE"), ({x, y}) => { Robot.moveMouse(x, y); })
-        .on(message.is("MOUSE_DOWN"), ({x, y}) => { Robot.moveMouse(x, y); Robot.mouseToggle("down"); })
-        .on(message.is("MOUSE_UP"),   ({x, y}) => { Robot.moveMouse(x, y); Robot.mouseToggle("up"); })
+        .on(message.is("MOUSE_DOWN"), ({x, y, button}) => { Robot.moveMouse(x, y); Robot.mouseToggle("down", button); })
+        .on(message.is("MOUSE_UP"),   ({x, y, button}) => { Robot.moveMouse(x, y); Robot.mouseToggle("up", button); })
+        .on(message.is("KEY_UP"),     ({keyCode}) => { Robot.keyToggle(keyCode, "up"); })
+        .on(message.is("KEY_DOWN"),   ({keyCode}) => { Robot.keyToggle(keyCode, "down"); })
+        .on(message.is("INSERT_TO_CLIPBOARD"), ({content}) => { clipboard.writeText(content) })
         .otherwise(() => console.log("!NONE"));
 
     function setConnection({peer_id}) {
