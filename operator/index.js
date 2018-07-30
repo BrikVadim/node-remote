@@ -6,11 +6,7 @@ const Guid = require("guid");
 const userId = Guid.raw();
 
 const peerConfig = {
-    key: '8q4fi0nhuqt49529',
-    config: {
-        'iceServers': [
-            { url: 'stun:stun.l.google.com:19302' }]
-    }
+    key: '8q4fi0nhuqt49529'
 };
 
 const peer = new Peer(userId, peerConfig);

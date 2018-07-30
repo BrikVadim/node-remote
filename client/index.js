@@ -4,13 +4,15 @@ const Robot = require("robotjs");
 const Peer = require("peerjs");
 const Guid = require("guid");
 
-const userId = Guid.raw();
+const userId = localStorage.UID || Guid.raw();
+
+localStorage.UID = userId;
 
 const peerConfig = {
     key: '8q4fi0nhuqt49529',
     config: {
         'iceServers': [
-            { url: 'stun:stun.l.google.com:19302' }]
+            { urls: 'stun:stun.sip.us:3478' }]
     }
 };
 
@@ -44,7 +46,9 @@ const handleMessage = recivedPackage => {
         .on(message.is("HANDSHAKE"),        setConnection)
         .on(message.is("GET_SOURCES"),      getSources)
         .on(message.is("GET_STREAM_BY_ID"), getStreamById)
-        .on(message.is("MOUSE_MOVE"), ({x, y}) => { console.log("MOVE!"); Robot.moveMouse(x, y); })
+        .on(message.is("MOUSE_MOVE"), ({x, y}) => { Robot.moveMouse(x, y); })
+        .on(message.is("MOUSE_DOWN"), ({x, y}) => { Robot.moveMouse(x, y); Robot.mouseToggle("down"); })
+        .on(message.is("MOUSE_UP"),   ({x, y}) => { Robot.moveMouse(x, y); Robot.mouseToggle("up"); })
         .otherwise(() => console.log("!NONE"));
 
     function setConnection({peer_id}) {
