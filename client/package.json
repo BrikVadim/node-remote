@@ -1,0 +1,20 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "electron .",
+    "fix": "npm rebuild --runtime=electron --target=2.0.5 --disturl=https://atom.io/download/atom-shell --abi=64",
+    "build": "electron-packager . client --platform=win32 --arch=x64 --electron-version=2.0.5 --app-version=0.1.0 --out=dist --ignore=dist --prune"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^2.0.5",
+    "guid": "0.0.12",
+    "peerjs": "^0.3.16",
+    "robotjs": "^0.5.1"
+  }
+}

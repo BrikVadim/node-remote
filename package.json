@@ -1,0 +1,9 @@
+{
+  "name": "remote",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npm run client & npm run operator",
+    "client": "cd client; npm start",
+    "operator": "cd operator; npm start"
+  }
+}

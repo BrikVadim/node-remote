@@ -1,0 +1,17 @@
+{
+  "name": "operator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^2.0.5",
+    "guid": "0.0.12",
+    "peerjs": "^0.3.16"
+  }
+}
