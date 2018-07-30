@@ -1,5 +1,5 @@
 const {match, matchReciver} = require("./../lib/match");
-const {desktopCapturer} = require("electron");
+const {desktopCapturer, clipboard} = require("electron");
 const Peer = require("peerjs");
 const Guid = require("guid");
 
@@ -9,7 +9,8 @@ const peerConfig = {
     key: '8q4fi0nhuqt49529',
     config: {
         'iceServers': [
-            { url: 'stun:stun.l.google.com:19302' }]
+            {'urls': 'stun:stun.sip.us:3478'},
+        ]
     }
 };
 
@@ -92,3 +93,51 @@ document.querySelector('video').addEventListener("mousemove", (event) => {
         y: event.offsetY
     })
 })
+
+document.querySelector('video').addEventListener("mousedown", (event) => {
+    connection.send({
+        message: "MOUSE_DOWN",
+        button: event.button == 0 ? "left" : "right",
+        x: event.offsetX,
+        y: event.offsetY
+    })
+})
+
+document.querySelector('video').addEventListener("mouseup", (event) => {
+    connection.send({
+        message: "MOUSE_UP",
+        button: event.button == 0 ? "left" : "right",
+        x: event.offsetX,
+        y: event.offsetY
+    })
+})
+
+document.querySelector('video').addEventListener("keydown", keyDown);
+document.body.addEventListener("keydown", keyDown);
+
+document.querySelector('video').addEventListener("keyup", keyUp);
+document.body.addEventListener("keyup", keyUp);
+
+function keyDown(event) {
+
+    if (event.ctrlKey && event.which == 86) {
+        connection.send({
+            message: "INSERT_TO_CLIPBOARD",
+            content: clipboard.readText()
+        })
+
+        return;
+    }
+
+    connection.send({
+        message: "KEY_DOWN",
+        keyCode: event.key
+    })
+}
+
+function keyUp(event) {
+    connection.send({
+        message: "KEY_UP",
+        keyCode: event.key
+    })
+}
