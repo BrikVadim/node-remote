@@ -5,14 +5,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Oswald');
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .caption {
+            margin-top: 2px;
+            font-size: 12px;
+        }
+
+        video {
+            margin: 25px;
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+
+        input[type="text"] {
+            width: 250px;
+            height: 30px;
+            border-radius: 50px 0 0 50px;
+            border: 2px solid rgb(39, 113, 209);
+            border-right: none;
+            outline: none;
+            padding-left: 10px;
+        }
+
+        button {
+            border: 2px solid rgb(39, 113, 209);
+            background: white;
+            width: 100px;
+            height: 36px;
+            border-radius: 0 50px 50px 0;
+        }
+
+        .connection-group {
+            padding: 0;
+            display: flex;
+        }
+
+        .preview {
+            max-width: 300px;
+            max-height: 200px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        p {
+            margin-bottom: 0px;
+        }
+
+        #sources_list {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: row;
+        }
+
+        #sources_list div {
+            margin: 15px;
+            transition: .3s;
+        }
+
+        #sources_list div:hover {
+            margin: 15px 35px;
+            transform: scale(1.3);
+        }
+    </style>
     <script src="index.js" defer></script>
 </head>
 <body>
-    <p id="user_id"></p>
+    <img src="logo_main.svg" />
+    <p class="caption">УДАЛЕННЫЙ ДОСТУП</p>
+    <!-- <p id="user_id"></p> -->
     <video autoplay></video>
-    <input id="client_id" type="text" />
-    <button id="connect_button">Connect</button>
 
-    <div id="sources_list"></div>
+    <div class="connection-group">
+        <input id="client_id" type="text" />
+        <button id="connect_button">Connect</button>
+    </div>
+
+    <div id="sources_list">
+    </div>
 </body>
 </html>
