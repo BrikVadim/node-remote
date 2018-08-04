@@ -62,6 +62,11 @@ const handleMessage = recivedPackage => {
             console.log(connection)
             
             connection.on("data", handleMessage);
+            connection.on("close", () => {
+                connection.close();
+                alert("Connection lost!");
+                connection = null;
+            })
         });
     }
 
@@ -73,6 +78,7 @@ const handleMessage = recivedPackage => {
             sources: JSON.stringify(sources)
         };
 
+        console.log(sourcesResponse);
         connection.send(sourcesResponse);
 
         getSourcesPreview(sources);
