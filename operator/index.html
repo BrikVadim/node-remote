@@ -21,9 +21,12 @@
         }
 
         video {
+            background: white;
             margin: 25px;
             max-width: 100%;
             max-height: 100%;
+            transition: .5s;
+            z-index: 100;
             box-shadow: 0 3px 10px rgba(0,0,0,0.2);
         }
 
@@ -34,18 +37,32 @@
             border: 2px solid rgb(39, 113, 209);
             border-right: none;
             outline: none;
-            padding-left: 10px;
+            text-align: center;
+            font-family: 'Oswald', sans-serif;
         }
 
         button {
             border: 2px solid rgb(39, 113, 209);
             background: white;
-            width: 100px;
+            width: 120px;
             height: 36px;
             border-radius: 0 50px 50px 0;
+            font-family: 'Oswald', sans-serif;
+            transition: .3s;
+        }
+
+        button:hover {
+            background: rgb(39, 113, 209);
+            color: white;
         }
 
         .connection-group {
+            padding: 0;
+            display: flex;
+        }
+
+        .video_group {
+            margin-top: 10px;
             padding: 0;
             display: flex;
         }
@@ -75,6 +92,46 @@
             margin: 15px 35px;
             transform: scale(1.3);
         }
+
+        #lock_button {
+            border-radius: 50px 0 0 50px;
+        }
+
+        #disconnect_button {
+            border-radius: 0 50px 50px 0;
+            border-color: rgb(226, 25, 25);
+        }
+
+        #disconnect_button:hover {
+            background: rgb(226, 25, 25);
+        }
+
+        #video_width {
+            width: 80px;
+            border: 2px solid rgb(39, 113, 209);
+            border-right: none;
+            border-radius: 50px 0 0 50px;
+            margin: 0;
+            padding-top: 0;
+            transition: .3s;
+        }
+
+        #video_width:hover {
+            width: 100px;
+        }
+
+        #video_height {
+            width: 80px;
+            border: 2px solid rgb(39, 113, 209);
+            border-radius: 0 50px 50px 0;
+            margin: 0;
+            padding-top: 0;
+            transition: .3s;
+        }
+
+        #video_height:hover {
+            width: 100px;
+        }
     </style>
     <script src="index.js" defer></script>
 </head>
@@ -84,9 +141,25 @@
     <!-- <p id="user_id"></p> -->
     <video autoplay></video>
 
-    <div class="connection-group">
-        <input id="client_id" type="text" />
-        <button id="connect_button">Connect</button>
+    <div id="connection" style="display: flex; flex-direction: column; align-items: center">
+        <p style="padding-bottom: 10px;">Подключение к клиенту</p>
+        <div class="connection-group">
+            <input id="client_id" type="text" placeholder="GUID идендификатор клиента" />
+            <button id="connect_button">ПОДКЛЮЧИТЬСЯ</button>
+        </div>
+        <p style="padding-top: 10px;">Пораметры видеопатока</p>
+        <div class="video_group">
+            <input id="video_width" type="text" placeholder="Ширина" />
+            <input id="video_height" type="text" placeholder="Высота" />
+        </div>
+    </div>
+
+    <div id="control" style="display: none;">
+        <p style="padding-bottom: 10px;">Управление компьютером клиента</p>
+        <div class="control-group">
+            <button id="lock_button">ЗАМОРОЗИТЬ</button>
+            <button id="disconnect_button">ОТКЛЮЧИТЬСЯ</button>
+        </div>
     </div>
 
     <div id="sources_list">

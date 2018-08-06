@@ -20,22 +20,24 @@ const getMediaSources = (options = { types: ['screen'] }) => new Promise((resolv
     desktopCapturer.getSources(options, (error, sources) => error ? reject(error) : resolve(sources))
 });
 
-const getMediaStream = source_id => navigator.mediaDevices.getUserMedia({
+const getMediaStream = (source_id, width = 1920, height = 1080) => navigator.mediaDevices.getUserMedia({
     audio: false,
     video: {
         mandatory: {
             chromeMediaSource: 'desktop',
             chromeMediaSourceId: source_id,
-            minWidth: 800,
-            maxWidth: 1920,
-            minHeight: 600,
-            maxHeight: 1080
+            minWidth: width,
+            maxWidth: width,
+            minHeight: height,
+            maxHeight: height
         }
     }
 });
 
 const peer = new Peer(userId, peerConfig);
 let connection = null;
+let callConnection = null;
+let primaryСonnection = null;
 
 const handleMessage = recivedPackage => {
     const message = matchReciver(data => data.message);
@@ -52,18 +54,30 @@ const handleMessage = recivedPackage => {
         .on(message.is("MOUSE_SCROLL"),         ({deltaX, deltaY}) => { Robot.scrollMouse(deltaX, deltaY); })
         .on(message.is("KEY_UP"),               ({keyCode}) => { Robot.keyToggle(keyCode, "up"); })
         .on(message.is("KEY_DOWN"),             ({keyCode}) => { Robot.keyToggle(keyCode, "down"); })
-        .on(message.is("INSERT_TO_CLIBPBOARD"),  ({content}) => { clibpboard.writeText(content) })
+        .on(message.is("INSERT_TO_CLIBPBOARD"), ({content}) => { clibpboard.writeText(content) })
+        .on(message.is("CLOSE_CONNECTION"),     () => { 
+            connection.close();
+            callConnection.close();
+            primaryСonnection.close();
+        })
         .otherwise(() => console.log("!NONE"));
 
     function setConnection({peer_id}) {
+        if (connection) {
+            connection.close();
+        }
+
         connection = peer.connect(peer_id);
+
+        connection.on("close", () => {
+            connection = null;
+        });
 
         connection.on("open", () => {
             console.log(connection)
             
             connection.on("data", handleMessage);
             connection.on("close", () => {
-                connection.close();
                 alert("Connection lost!");
                 connection = null;
             })
@@ -85,10 +99,14 @@ const handleMessage = recivedPackage => {
 
     }
 
-    async function getStreamById({source_id}) {
-        const stream = await getMediaStream(source_id);
+    async function getStreamById({source_id, width, height}) {
+        const stream = await getMediaStream(source_id, width, height);
 
-        peer.call(connection.peer, stream);
+        callConnection = peer.call(connection.peer, stream);
+
+        callConnection.on("close", () => {
+            callConnection = null;
+        });
     }
 
     async function getSourcesPreview(sources) {
@@ -121,8 +139,14 @@ const handleMessage = recivedPackage => {
 };
 
 peer.on("open", id => {
-    peer.on("connection", primaryСonnection => {
+    peer.on("connection", conn => {
+        primaryСonnection = conn;
+
         primaryСonnection.on("data", handleMessage);
+
+        primaryСonnection.on("close", () => {
+            primaryСonnection = null;
+        });
     });
 });
 
