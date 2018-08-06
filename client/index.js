@@ -1,5 +1,6 @@
+const {exec} = require("child_process");
 const {match, matchReciver} = require("./../lib/match");
-const {desktopCapturer, clibpboard} = require("electron");
+const {desktopCapturer, clibpboard, screen} = require("electron");
 const Robot = require("robotjs");
 const Peer = require("peerjs");
 const Guid = require("guid");
@@ -17,7 +18,13 @@ const peerConfig = {
 };
 
 const getMediaSources = (options = { types: ['screen'] }) => new Promise((resolve, reject) => {
-    desktopCapturer.getSources(options, (error, sources) => error ? reject(error) : resolve(sources))
+    desktopCapturer.getSources(options, (error, sources) => {
+        for (let index in screens = screen.getAllDisplays()) {
+            sources[index].bounds = screens[index].bounds;
+        }
+        
+        error ? reject(error) : resolve(sources)
+    })
 });
 
 const getMediaStream = (source_id, width = 1920, height = 1080) => navigator.mediaDevices.getUserMedia({
@@ -26,9 +33,9 @@ const getMediaStream = (source_id, width = 1920, height = 1080) => navigator.med
         mandatory: {
             chromeMediaSource: 'desktop',
             chromeMediaSourceId: source_id,
-            minWidth: width,
+            minWidth: 1,
             maxWidth: width,
-            minHeight: height,
+            minHeight: 1,
             maxHeight: height
         }
     }
@@ -39,6 +46,18 @@ let connection = null;
 let callConnection = null;
 let primaryСonnection = null;
 
+const deliveryConfirmation = {
+    timer: null,
+    timeout: 10000,
+    listen: {
+        start: listener => deliveryConfirmation.timer = setTimeout(listener, deliveryConfirmation.timeout),
+        done: () => {
+            clearTimeout(deliveryConfirmation.timer)
+            deliveryConfirmation.timer = null;
+        }
+    }
+};
+
 const handleMessage = recivedPackage => {
     const message = matchReciver(data => data.message);
 
@@ -47,6 +66,7 @@ const handleMessage = recivedPackage => {
     return match(recivedPackage)
         .on(message.is("HANDSHAKE"),            setConnection)
         .on(message.is("GET_SOURCES"),          getSources)
+        .on(message.is("SOURCES_RESPONSE_OK"),  () => deliveryConfirmation.listen.done())
         .on(message.is("GET_STREAM_BY_ID"),     getStreamById)
         .on(message.is("MOUSE_MOVE"),           ({x, y}) => { Robot.moveMouse(x, y); })
         .on(message.is("MOUSE_DOWN"),           ({x, y, button}) => { Robot.moveMouse(x, y); Robot.mouseToggle("down", button); })
@@ -55,6 +75,8 @@ const handleMessage = recivedPackage => {
         .on(message.is("KEY_UP"),               ({keyCode}) => { Robot.keyToggle(keyCode, "up"); })
         .on(message.is("KEY_DOWN"),             ({keyCode}) => { Robot.keyToggle(keyCode, "down"); })
         .on(message.is("INSERT_TO_CLIBPBOARD"), ({content}) => { clibpboard.writeText(content) })
+        .on(message.is("FREEZE_MOUSE"),         () => {})
+        .on(message.is("UNFREEZE_MOUSE"),       () => {})
         .on(message.is("CLOSE_CONNECTION"),     () => { 
             connection.close();
             callConnection.close();
@@ -68,10 +90,6 @@ const handleMessage = recivedPackage => {
         }
 
         connection = peer.connect(peer_id);
-
-        connection.on("close", () => {
-            connection = null;
-        });
 
         connection.on("open", () => {
             console.log(connection)
@@ -95,14 +113,20 @@ const handleMessage = recivedPackage => {
         console.log(sourcesResponse);
         connection.send(sourcesResponse);
 
+        if (deliveryConfirmation.timer == null) {
+            deliveryConfirmation.listen.start(getSources);
+        } 
+
         getSourcesPreview(sources);
 
     }
 
     async function getStreamById({source_id, width, height}) {
-        const stream = await getMediaStream(source_id, width, height);
+        const stream = await getMediaStream(source_id, Number.parseInt(width) || undefined, Number.parseInt(height) || undefined);
 
         callConnection = peer.call(connection.peer, stream);
+
+
 
         callConnection.on("close", () => {
             callConnection = null;
@@ -141,9 +165,9 @@ const handleMessage = recivedPackage => {
 peer.on("open", id => {
     peer.on("connection", conn => {
         primaryСonnection = conn;
-
+        
         primaryСonnection.on("data", handleMessage);
-
+        
         primaryСonnection.on("close", () => {
             primaryСonnection = null;
         });
