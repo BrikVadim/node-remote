@@ -62,7 +62,6 @@
         }
 
         .video_group {
-            margin-top: 10px;
             padding: 0;
             display: flex;
         }
@@ -132,6 +131,38 @@
         #video_height:hover {
             width: 100px;
         }
+
+        #video_group_container {
+            position: relative;
+            margin-top: 20px;
+            padding: 20px 50px;
+            width: 140px;
+            height: 0px;
+            border-radius: 20px;
+            background: white;
+            transition: .5s;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #video_group_container header {
+            position: absolute;
+            top: 7px;
+            transition: .5s;
+        }
+
+        #video_group_container:hover {
+            height: 100px;
+            width: 250px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        #video_group_container:hover header {
+            opacity: 0;
+        }
     </style>
     <script src="index.js" defer></script>
 </head>
@@ -147,10 +178,16 @@
             <input id="client_id" type="text" placeholder="GUID идендификатор клиента" />
             <button id="connect_button">ПОДКЛЮЧИТЬСЯ</button>
         </div>
-        <p style="padding-top: 10px;">Пораметры видеопатока</p>
-        <div class="video_group">
-            <input id="video_width" type="text" placeholder="Ширина" />
-            <input id="video_height" type="text" placeholder="Высота" />
+        <div id="video_group_container">
+            <header>
+                <img src="https://cdn2.iconfinder.com/data/icons/flat-ui-icons-24-px/24/settings-24-512.png" width="12">
+                Настройки подключения
+            </header>
+            <p>Параметры видеопотока</p>
+            <div class="video_group">
+                <input id="video_width" type="text" placeholder="Ширина" />
+                <input id="video_height" type="text" placeholder="Высота" />
+            </div>
         </div>
     </div>
 
@@ -163,6 +200,7 @@
     </div>
 
     <div id="sources_list">
+        <img style="display: none" id="preload" src="https://cubicleninjas.com/wp-content/uploads/2018/01/bestweb__design2018__.gif">
     </div>
 </body>
 </html>

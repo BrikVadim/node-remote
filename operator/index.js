@@ -18,6 +18,8 @@ const peer = new Peer(userId, peerConfig);
 let connection = null;
 let callConnection = null;
 
+let clientScreenBounds = null;
+
 peer.on("call", async call => {
 
     callConnection = call;
@@ -47,6 +49,8 @@ const handleMessage = recivedPackage => {
     return match(recivedPackage)
         .on(message.is("SOURCES_RESPONSE"), updateSourcesList)
         .on(message.is("SOURCE_PREVIEW"), ({image, source_id}) => {
+            document.getElementById("preload").style.display = "none";
+
             try {
                 document.getElementById(source_id).src = image;
             } catch(e) {
@@ -55,6 +59,7 @@ const handleMessage = recivedPackage => {
                 const container = document.createElement("div");
     
                 sourceItem.innerText = "НЕИЗВЕСТНЫЙ ИСТОЧНИК";
+                sourceItem.id = `${source_id}_caption`;
                 sourcePreview.id = source_id;
                 sourcePreview.className = "preview";
                 sourcePreview.src = image;
@@ -79,33 +84,49 @@ const handleMessage = recivedPackage => {
 
     function updateSourcesList({sources}) {
         console.log(sources);
+
+        connection.send({
+            message: "SOURCES_RESPONSE_OK"
+        })
+
         sources = JSON.parse(sources);
 
+        document.getElementById("preload").style.display = "none";
+
         sources.forEach(source => {      
-            const sourceItem = document.createElement("p");
-            const sourcePreview = document.createElement("img");
-            const container = document.createElement("div");
+            const undefinedSource = document.getElementById(`${source.id}_caption`);
 
-            sourceItem.innerText = source.name;
-            sourcePreview.id = source.id;
-            sourcePreview.className = "preview";
-            
-            container.addEventListener("click", async function() {
-                connection.send({
-                    message: "GET_STREAM_BY_ID",
-                    source_id: source.id,
-                    width:  document.getElementById("video_width").value,
-                    height: document.getElementById("video_height").value
+            if (undefinedSource) {
+                undefinedSource.innerText = source.name;
+            } else {
+                const sourceItem = document.createElement("p");
+                const sourcePreview = document.createElement("img");
+                const container = document.createElement("div");
+
+                sourceItem.innerText = source.name;
+                sourcePreview.id = source.id;
+                sourcePreview.className = "preview";
+                sourcePreview.src = "https://cdn.dribbble.com/users/597558/screenshots/1998465/comp-2.gif";
+                
+                container.addEventListener("click", async function() {
+                    connection.send({
+                        message: "GET_STREAM_BY_ID",
+                        source_id: source.id,
+                        width:  document.getElementById("video_width").value,
+                        height: document.getElementById("video_height").value
+                    });
+
+                    clientScreenBounds = source.bounds;
                 });
-            });
-            
-            container.append(sourceItem);
-            container.append(sourcePreview);
-            
-            container.style.display = "flex";
-            container.style.flexDirection = "column";
+                
+                container.append(sourceItem);
+                container.append(sourcePreview);
+                
+                container.style.display = "flex";
+                container.style.flexDirection = "column";
 
-            sources_list.append(container);
+                sources_list.append(container);
+            }
         });
     }
 };
@@ -124,6 +145,8 @@ document.getElementById("connect_button").addEventListener("click", function() {
             connection.send({
                 message: "GET_SOURCES"
             });
+
+            document.getElementById("preload").style.display = "block";
          });
 
         connection.send({
@@ -151,12 +174,20 @@ document.getElementById("disconnect_button").addEventListener("click", () => {
     }
 })
 
+document.getElementById("lock_button").addEventListener("click", () => {
+    if (connection) {
+        connection.send({
+            message: "FREEZE_MOUSE"
+        });
+    }
+})
+
 document.querySelector('video').addEventListener("mousemove", (event) => {
     if (connection) {
         connection.send({
             message: "MOUSE_MOVE",
-            x: event.offsetX * (+document.querySelector('video').videoWidth / +document.querySelector('video').offsetWidth),
-            y: event.offsetY * (+document.querySelector('video').videoHeight / +document.querySelector('video').offsetHeight)
+            x: event.offsetX * (+document.querySelector('video').videoWidth / +document.querySelector('video').offsetWidth) + (clientScreenBounds.x || 0),
+            y: event.offsetY * (+document.querySelector('video').videoHeight / +document.querySelector('video').offsetHeight) + (clientScreenBounds.y || 0)
         })
     }
 })
@@ -166,8 +197,8 @@ document.querySelector('video').addEventListener("mousedown", (event) => {
         connection.send({
             message: "MOUSE_DOWN",
             button: event.button == 0 ? "left" : "right",
-            x: event.offsetX * (+document.querySelector('video').videoWidth / +document.querySelector('video').offsetWidth),
-            y: event.offsetY * (+document.querySelector('video').videoHeight / +document.querySelector('video').offsetHeight)
+            x: event.offsetX * (+document.querySelector('video').videoWidth / +document.querySelector('video').offsetWidth) + (clientScreenBounds.x || 0),
+            y: event.offsetY * (+document.querySelector('video').videoHeight / +document.querySelector('video').offsetHeight) + (clientScreenBounds.y || 0)
         });
     }
 })
@@ -177,12 +208,9 @@ document.querySelector('video').addEventListener("mouseup", (event) => {
         connection.send({
             message: "MOUSE_UP",
             button: event.button == 0 ? "left" : "right",
-            x: event.offsetX * (+document.querySelector('video').videoWidth / +document.querySelector('video').offsetWidth),
-            y: event.offsetY * (+document.querySelector('video').videoHeight / +document.querySelector('video').offsetHeight)
+            x: event.offsetX * (+document.querySelector('video').videoWidth / +document.querySelector('video').offsetWidth) + (clientScreenBounds.x || 0),
+            y: event.offsetY * (+document.querySelector('video').videoHeight / +document.querySelector('video').offsetHeight) + (clientScreenBounds.y || 0)
         });
-
-        connection.close();
-        callConnection.close();
     }
 })
 
