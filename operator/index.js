@@ -6,7 +6,9 @@ const Guid = require("guid");
 const userId = Guid.raw();
 
 const peerConfig = {
-    key: '8q4fi0nhuqt49529',
+    host: '127.0.0.1',
+    port: '9000',
+    path: '/remote',
     config: {
         'iceServers': [
             {'urls': 'stun:stun.sip.us:3478'},
@@ -27,18 +29,13 @@ peer.on("call", async call => {
     callConnection.on("close", () => {
         callConnection = null;
     });
+   
+    call.answer(new MediaStream());
 
-    navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false
-    }).then(stream => {
-        call.answer(stream);
-
-        call.on('stream', function(stream) {
-            document.querySelector('video').src = URL.createObjectURL(stream);
-        });
-    }).catch(console.error)
-
+    call.on('stream', function(stream) {
+        document.querySelector('video').src = URL.createObjectURL(stream);
+        document.querySelector('video').style.display = "block";
+    });
 })
 
 const handleMessage = recivedPackage => {
@@ -48,7 +45,7 @@ const handleMessage = recivedPackage => {
 
     return match(recivedPackage)
         .on(message.is("SOURCES_RESPONSE"), updateSourcesList)
-        .on(message.is("SOURCE_PREVIEW"), ({image, source_id}) => {
+        .on(message.is("SOURCE_PREVIEW"), ({image, source_id, bounds}) => {
             document.getElementById("preload").style.display = "none";
 
             try {
@@ -69,6 +66,9 @@ const handleMessage = recivedPackage => {
                         message: "GET_STREAM_BY_ID",
                         source_id: source_id
                     });
+
+                    console.log(bounds)
+                    clientScreenBounds = JSON.parse(bounds);
                 });
                 
                 container.append(sourceItem);
@@ -255,4 +255,33 @@ function keyUp(event) {
             keyCode: event.key.toLowerCase().replace("arrow", "")
         })
     }
+}
+
+
+var xhr = new XMLHttpRequest();
+
+xhr.open('GET', 'http://127.0.0.1:9000/contacts/', false);
+
+xhr.send();
+
+if (xhr.status != 200) {
+  alert( xhr.status + ': ' + xhr.statusText );
+} else {
+  const contacts = JSON.parse(xhr.responseText);
+  
+  const colors = ["blue", "red", "purple", "green"];
+
+  contacts.forEach(contact => {
+      const names = contact.name.split(' ');
+
+      document.getElementById("contacts").innerHTML += `
+    <div class="contact" style="display:flex; flex-direction: row; padding: 10px; font-size: 12px;">
+      <div class="avatar ${ colors[Math.floor(contact.name.length % 2 + contact.name.length % 3)] }">${(names.length > 1 ? names[0][0] + names[1][0] : names[0][0]).toUpperCase()}</div>
+      <div>
+          <p style="margin-top: 5px; padding-left: 10px; font-size: 16px;">${contact.name}</p>
+          <p style="margin-top: 0px; padding-left: 10px; font-size: 10px;">${contact.guid}</p>
+      </div>
+    </div>
+      `;
+  })
 }

@@ -5,12 +5,27 @@ const Robot = require("robotjs");
 const Peer = require("peerjs");
 const Guid = require("guid");
 
-const userId = localStorage.UID || Guid.raw();
+let userId = null;
+
+if (!localStorage.UID) {
+    var xhr = new XMLHttpRequest();
+    
+    xhr.open('POST', 'http://127.0.0.1:9000/contacts/', true);
+    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    
+    userId = Guid.raw();
+    
+    xhr.send(`name=${require("os").userInfo().username}&guid=${userId}`);
+} else {
+    userId = localStorage.UID;
+}
 
 localStorage.UID = userId;
 
 const peerConfig = {
-    key: '8q4fi0nhuqt49529',
+    host: '127.0.0.1',
+    port: '9000',
+    path: '/remote',
     config: {
         'iceServers': [
             { urls: 'stun:stun.sip.us:3478' }]
@@ -48,7 +63,7 @@ let primaryСonnection = null;
 
 const deliveryConfirmation = {
     timer: null,
-    timeout: 10000,
+    timeout: 5000,
     listen: {
         start: listener => deliveryConfirmation.timer = setTimeout(listener, deliveryConfirmation.timeout),
         done: () => {
@@ -154,7 +169,8 @@ const handleMessage = recivedPackage => {
                     connection.send({
                         message: "SOURCE_PREVIEW",
                         image: preview,
-                        source_id: source.id
+                        source_id: source.id,
+                        bounds: JSON.stringify(source.bounds)
                     })
                 };
             }).catch(console.error)

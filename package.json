@@ -5,5 +5,8 @@
     "start": "npm run client & npm run operator",
     "client": "cd client; npm start",
     "operator": "cd operator; npm start"
+  },
+  "dependencies": {
+    "peer": "^0.2.8"
   }
 }
