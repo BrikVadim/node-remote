@@ -48,7 +48,7 @@ let primaryСonnection = null;
 
 const deliveryConfirmation = {
     timer: null,
-    timeout: 10000,
+    timeout: 5000,
     listen: {
         start: listener => deliveryConfirmation.timer = setTimeout(listener, deliveryConfirmation.timeout),
         done: () => {
