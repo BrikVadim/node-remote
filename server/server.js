@@ -3,7 +3,16 @@ const app = express();
 const bodyParser = require('body-parser');
 const ExpressPeerServer = require('peer').ExpressPeerServer;
 
-const server = app.listen(9000);
+const host = process.env.host || "0.0.0.0";
+const port = process.env.port || 9000;
+
+const server = app.listen(port, host, err => {
+	if (err) {
+		return console.err(err);
+	}
+
+	console.log(`Server started on ${host}:${port}`);
+});
 
 const options = {
     debug: true
@@ -28,6 +37,7 @@ app.get('/contacts', (req, res) => {
 
 app.post('/contacts', (req,res) => {
     db.insert({name: req.body.name, guid: req.body.guid }, (err, doc) => {
+	console.log(`Insert { name: ${req.body.name}, guid: ${req.body.guid} }`);
         res.send(doc);
     });
 });
