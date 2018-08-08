@@ -5,16 +5,7 @@ const Guid = require("guid");
 
 const userId = Guid.raw();
 
-const peerConfig = {
-    host: '127.0.0.1',
-    port: '9000',
-    path: '/remote',
-    config: {
-        'iceServers': [
-            {'urls': 'stun:stun.sip.us:3478'},
-        ]
-    }
-};
+const peerConfig = require('./config/peer-server');
 
 const peer = new Peer(userId, peerConfig);
 let connection = null;
@@ -172,6 +163,10 @@ document.getElementById("disconnect_button").addEventListener("click", () => {
             message: "CLOSE_CONNECTION"
         });
     }
+
+    document.getElementById("sources_list").innerHTML = `<img style="display: none" id="preload" src="https://cubicleninjas.com/wp-content/uploads/2018/01/bestweb__design2018__.gif">`;
+    document.getElementById("control").style.display = "none";
+    document.getElementById("connection").style.display = "flex";
 })
 
 document.getElementById("lock_button").addEventListener("click", () => {
@@ -257,10 +252,10 @@ function keyUp(event) {
     }
 }
 
-
+const apiConfig = require("./config/api-server");
 var xhr = new XMLHttpRequest();
 
-xhr.open('GET', 'http://127.0.0.1:9000/contacts/', false);
+xhr.open(apiConfig.method, `${apiConfig.protocol}://${apiConfig.host}:${apiConfig.port}${apiConfig.path}`, false);
 
 xhr.send();
 
@@ -275,7 +270,7 @@ if (xhr.status != 200) {
       const names = contact.name.split(' ');
 
       document.getElementById("contacts").innerHTML += `
-    <div class="contact" style="display:flex; flex-direction: row; padding: 10px; font-size: 12px;">
+    <div onclick="document.getElementById('client_id').value = '${contact.guid}'" class="contact" style="display:flex; flex-direction: row; padding: 10px; font-size: 12px;">
       <div class="avatar ${ colors[Math.floor(contact.name.length % 2 + contact.name.length % 3)] }">${(names.length > 1 ? names[0][0] + names[1][0] : names[0][0]).toUpperCase()}</div>
       <div>
           <p style="margin-top: 5px; padding-left: 10px; font-size: 16px;">${contact.name}</p>
