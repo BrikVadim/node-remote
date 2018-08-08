@@ -5,12 +5,14 @@ const Robot = require("robotjs");
 const Peer = require("peerjs");
 const Guid = require("guid");
 
+const apiConfig = require("./config/api-server");
+
 let userId = null;
 
 if (!localStorage.UID) {
     var xhr = new XMLHttpRequest();
     
-    xhr.open('POST', 'http://127.0.0.1:9000/contacts/', true);
+    xhr.open(apiConfig.method, `${apiConfig.protocol}://${apiConfig.host}:${apiConfig.port}${apiConfig.path}`, true);
     xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     
     userId = Guid.raw();
@@ -22,15 +24,7 @@ if (!localStorage.UID) {
 
 localStorage.UID = userId;
 
-const peerConfig = {
-    host: '127.0.0.1',
-    port: '9000',
-    path: '/remote',
-    config: {
-        'iceServers': [
-            { urls: 'stun:stun.sip.us:3478' }]
-    }
-};
+const peerConfig = require('./config/peer-server');
 
 const getMediaSources = (options = { types: ['screen'] }) => new Promise((resolve, reject) => {
     desktopCapturer.getSources(options, (error, sources) => {
@@ -111,7 +105,7 @@ const handleMessage = recivedPackage => {
             
             connection.on("data", handleMessage);
             connection.on("close", () => {
-                alert("Connection lost!");
+                
                 connection = null;
             })
         });
