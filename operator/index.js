@@ -1,4 +1,4 @@
-const {match, matchReciver} = require("./../lib/match");
+const {match, matchReciver} = require("./lib/match");
 const {clipboard} = require("electron");
 const Peer = require("peerjs");
 const Guid = require("guid");
@@ -255,7 +255,7 @@ function keyUp(event) {
 const apiConfig = require("./config/api-server");
 var xhr = new XMLHttpRequest();
 
-xhr.open(apiConfig.method, `${apiConfig.protocol}://${apiConfig.host}:${apiConfig.port}${apiConfig.path}`, false);
+xhr.open("GET", `${apiConfig.protocol}://${apiConfig.host}:${apiConfig.port}${apiConfig.path}`, false);
 
 xhr.send();
 

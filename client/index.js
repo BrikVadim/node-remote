@@ -1,30 +1,52 @@
 const {exec} = require("child_process");
-const {match, matchReciver} = require("./../lib/match");
+const {match, matchReciver} = require("./lib/match");
 const {desktopCapturer, clibpboard, screen} = require("electron");
 const Robot = require("robotjs");
 const Peer = require("peerjs");
 const Guid = require("guid");
 
+const log4js = require('log4js');
+
+log4js.configure({
+    appenders: { network: { type: 'file', filename: 'main.log' } },
+    categories: { default: { appenders: ['network'], level: 'trace' } }
+});
+  
+const networkLogger = log4js.getLogger('network');
+const applicationLogger = log4js.getLogger('application');
+
 const apiConfig = require("./config/api-server");
+applicationLogger.debug("API Config loaded");
 
 let userId = null;
 
-if (!localStorage.UID) {
-    var xhr = new XMLHttpRequest();
-    
-    xhr.open(apiConfig.method, `${apiConfig.protocol}://${apiConfig.host}:${apiConfig.port}${apiConfig.path}`, true);
-    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+const fs = require('fs');
+
+if (fs.existsSync(__dirname + "/config/guidInfo.json")) {
+    const guidInfo = require("./config/guidInfo.json");
+
+    userId = guidInfo.userId;
+    applicationLogger.trace("GUID exists");
+} else {
+    applicationLogger.debug("userId not found!");
+
+    var apiConnection = new XMLHttpRequest();
+
+    apiConnection.open("POST", `${apiConfig.protocol}://${apiConfig.host}:${apiConfig.port}${apiConfig.path}`, true);
+    apiConnection.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     
     userId = Guid.raw();
+    applicationLogger.trace("GUID Generated");
+
+    apiConnection.send(`name=${require("os").userInfo().username}&guid=${userId}`);
     
-    xhr.send(`name=${require("os").userInfo().username}&guid=${userId}`);
-} else {
-    userId = localStorage.UID;
+    fs.writeFile(__dirname + "/config/guidInfo.json", JSON.stringify({userId}), err => {
+        err ? applicationLogger.error(err) : applicationLogger.debug("guidInfo wrote")
+    }); 
 }
 
-localStorage.UID = userId;
-
 const peerConfig = require('./config/peer-server');
+networkLogger.debug("Peer config loaded");
 
 const getMediaSources = (options = { types: ['screen'] }) => new Promise((resolve, reject) => {
     desktopCapturer.getSources(options, (error, sources) => {
@@ -51,6 +73,8 @@ const getMediaStream = (source_id, width = 1920, height = 1080) => navigator.med
 });
 
 const peer = new Peer(userId, peerConfig);
+applicationLogger.debug("Peer created!");
+
 let connection = null;
 let callConnection = null;
 let primaryСonnection = null;
@@ -70,7 +94,7 @@ const deliveryConfirmation = {
 const handleMessage = recivedPackage => {
     const message = matchReciver(data => data.message);
 
-    console.log(recivedPackage);
+    networkLogger.trace("Recived new message", recivedPackage);
 
     return match(recivedPackage)
         .on(message.is("HANDSHAKE"),            setConnection)
@@ -101,12 +125,12 @@ const handleMessage = recivedPackage => {
         connection = peer.connect(peer_id);
 
         connection.on("open", () => {
-            console.log(connection)
+            networkLogger.debug("Connection open");
             
             connection.on("data", handleMessage);
             connection.on("close", () => {
-                
                 connection = null;
+                networkLogger.debug("Connection close!");
             })
         });
     }
@@ -127,18 +151,17 @@ const handleMessage = recivedPackage => {
         } 
 
         getSourcesPreview(sources);
-
     }
 
     async function getStreamById({source_id, width, height}) {
         const stream = await getMediaStream(source_id, Number.parseInt(width) || undefined, Number.parseInt(height) || undefined);
 
         callConnection = peer.call(connection.peer, stream);
-
-
+        networkLogger.debug("Call conenction opened");
 
         callConnection.on("close", () => {
             callConnection = null;
+            networkLogger.debug("Call connection closed");
         });
     }
 
@@ -173,13 +196,16 @@ const handleMessage = recivedPackage => {
 };
 
 peer.on("open", id => {
+    networkLogger.debug("Peer opened");
     peer.on("connection", conn => {
         primaryСonnection = conn;
+        networkLogger.debug("Primary connection opened");
         
         primaryСonnection.on("data", handleMessage);
         
         primaryСonnection.on("close", () => {
             primaryСonnection = null;
+            networkLogger.debug("Primary connection closed");
         });
     });
 });

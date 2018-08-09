@@ -29,7 +29,6 @@ const server = app.listen(port, host, err => {
 			method: "POST"
 		};
 
-
 		const peerConfig = {
 			host: add,
 			port,
@@ -40,7 +39,6 @@ const server = app.listen(port, host, err => {
 				]
 			}
 		};
-
 
 		fs.writeFile('api-server.json', JSON.stringify(apiConfig), err => {
 			if (err) {
