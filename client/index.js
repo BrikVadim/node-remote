@@ -112,8 +112,8 @@ const handleMessage = recivedPackage => {
         .on(message.is("UNFREEZE_MOUSE"),       () => {})
         .on(message.is("CLOSE_CONNECTION"),     () => { 
             connection.close();
-            callConnection.close();
             primaryСonnection.close();
+            callConnection.close();
         })
         .otherwise(() => console.log("!NONE"));
 
