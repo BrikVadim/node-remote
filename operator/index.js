@@ -1,4 +1,6 @@
-const {match, matchReciver} = require("./../lib/match");
+try {
+
+const {match, matchReciver} = require("./lib/match");
 const {clipboard} = require("electron");
 const Peer = require("peerjs");
 const Guid = require("guid");
@@ -12,6 +14,8 @@ let connection = null;
 let callConnection = null;
 
 let clientScreenBounds = null;
+
+getContacts();
 
 peer.on("call", async call => {
 
@@ -45,6 +49,20 @@ const handleMessage = recivedPackage => {
                 const sourceItem = document.createElement("p");
                 const sourcePreview = document.createElement("img");
                 const container = document.createElement("div");
+
+                let counter = 5;
+                document.getElementById("alert_message").innerText = `Возможно произошла потеря данных, через ${counter} сек. будет выслан повторный запрос.`;
+                document.getElementById("alert").style.display = "flex";
+
+                let timer = setInterval(() => {
+                    if (counter-- > 1) {
+                        document.getElementById("alert_message").innerText = `Возможно произошла потеря данных, через ${counter} сек. будет выслан повторный запрос.`;
+                        return;
+                    }
+    
+                    clearInterval(timer);
+                    document.getElementById("alert").style.display = "none";
+                }, 1000);
     
                 sourceItem.innerText = "НЕИЗВЕСТНЫЙ ИСТОЧНИК";
                 sourceItem.id = `${source_id}_caption`;
@@ -53,6 +71,7 @@ const handleMessage = recivedPackage => {
                 sourcePreview.src = image;
                 
                 container.addEventListener("click", async function() {
+                    document.getElementById("alert").style.display = "none";
                     connection.send({
                         message: "GET_STREAM_BY_ID",
                         source_id: source_id
@@ -122,7 +141,9 @@ const handleMessage = recivedPackage => {
     }
 };
 
-document.getElementById("connect_button").addEventListener("click", function() {
+document.getElementById("connect_button").addEventListener("click", connect);
+
+function connect() {
     if (connection) {
         connection.close();
     }
@@ -138,7 +159,12 @@ document.getElementById("connect_button").addEventListener("click", function() {
             });
 
             document.getElementById("preload").style.display = "block";
-         });
+        });
+
+        connection.on("close", () => {
+            connection = null;
+            alert("Соединение закрыто!");
+        });
 
         connection.send({
             message: "HANDSHAKE",
@@ -149,13 +175,8 @@ document.getElementById("connect_button").addEventListener("click", function() {
         document.getElementById("control").style.display = "flex";
         document.getElementById("control").style.flexDirection = "column"; 
         document.getElementById("control").style.alignItems = "center";
-
-        connection.on("close", () => {
-            alert("Connection closed!");
-            connection = null;
-        });
     })
-})
+}
 
 document.getElementById("disconnect_button").addEventListener("click", () => {
     if (connection) {
@@ -166,6 +187,7 @@ document.getElementById("disconnect_button").addEventListener("click", () => {
 
     document.getElementById("sources_list").innerHTML = `<img style="display: none" id="preload" src="https://cubicleninjas.com/wp-content/uploads/2018/01/bestweb__design2018__.gif">`;
     document.getElementById("control").style.display = "none";
+    document.querySelector("video").style.display = "none";
     document.getElementById("connection").style.display = "flex";
 })
 
@@ -174,6 +196,25 @@ document.getElementById("lock_button").addEventListener("click", () => {
         connection.send({
             message: "FREEZE_MOUSE"
         });
+    }
+})
+
+let isFullscreen = false;
+
+document.getElementById("enable-fullscreen").addEventListener("click", function() {
+    const video = document.querySelector("video");
+
+    if (!isFullscreen) {
+        video.style.top = "0px";
+        video.style.position = "fixed";
+        video.style.height = "calc(100% - 40px)";
+
+        isFullscreen = true;
+    } else {
+        video.style.position = "relative";
+        video.style.height = "calc(100% - 250px)";
+
+        isFullscreen = false;
     }
 })
 
@@ -252,31 +293,42 @@ function keyUp(event) {
     }
 }
 
-const apiConfig = require("./config/api-server");
-var xhr = new XMLHttpRequest();
+document.getElementById("update-contacts").addEventListener("click", getContacts);
 
-xhr.open(apiConfig.method, `${apiConfig.protocol}://${apiConfig.host}:${apiConfig.port}${apiConfig.path}`, false);
+function getContacts() {
+    const apiConfig = require("./config/api-server");
+    var xhr = new XMLHttpRequest();
 
-xhr.send();
+    xhr.open("GET", `${apiConfig.protocol}://${apiConfig.host}:${apiConfig.port}${apiConfig.path}`, false);
 
-if (xhr.status != 200) {
-  alert( xhr.status + ': ' + xhr.statusText );
-} else {
-  const contacts = JSON.parse(xhr.responseText);
-  
-  const colors = ["blue", "red", "purple", "green"];
+    xhr.send();
 
-  contacts.forEach(contact => {
-      const names = contact.name.split(' ');
+    if (xhr.status != 200) {
+        alert( xhr.status + ': ' + xhr.statusText );
+    } else {
+        const contacts = JSON.parse(xhr.responseText);
+        
+        const colors = ["blue", "red", "purple", "green"];
 
-      document.getElementById("contacts").innerHTML += `
-    <div onclick="document.getElementById('client_id').value = '${contact.guid}'" class="contact" style="display:flex; flex-direction: row; padding: 10px; font-size: 12px;">
-      <div class="avatar ${ colors[Math.floor(contact.name.length % 2 + contact.name.length % 3)] }">${(names.length > 1 ? names[0][0] + names[1][0] : names[0][0]).toUpperCase()}</div>
-      <div>
-          <p style="margin-top: 5px; padding-left: 10px; font-size: 16px;">${contact.name}</p>
-          <p style="margin-top: 0px; padding-left: 10px; font-size: 10px;">${contact.guid}</p>
-      </div>
-    </div>
-      `;
-  })
+        document.getElementById("contacts").innerHTML = "";
+
+        contacts.forEach(contact => {
+            const names = contact.name.split(' ');
+
+            document.getElementById("contacts").innerHTML += `
+            <div onclick="document.getElementById('client_id').value = '${contact.guid}'" class="contact" style="display:flex; flex-direction: row; padding: 10px; font-size: 12px;">
+            <div class="avatar ${ colors[Math.floor(contact.name.length % 2 + contact.name.length % 3)] }">${(names.length > 1 ? names[0][0] + names[1][0] : names[0][0]).toUpperCase()}</div>
+            <div>
+                <p style="margin-top: 5px; padding-left: 10px; font-size: 16px;">${contact.name}</p>
+                <p style="margin-top: 0px; padding-left: 10px; font-size: 10px;">${contact.guid}</p>
+            </div>
+            <button class="hot-connect" onclick="document.getElementById('client_id').value = '${contact.guid}'; connect();"><i class="material-icons">shutter_speed</i></button>
+            </div>
+            `;
+        })
+    }
+}
+
+} catch(e) {
+    alert(e)
 }
